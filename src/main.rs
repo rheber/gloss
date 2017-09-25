@@ -1,7 +1,12 @@
 extern crate gloss;
 
 use std::env;
+use std::process;
 
 fn main() {
-  gloss::run(env::args());
+  let word = gloss::getWord(env::args()).unwrap_or_else(|err| {
+    eprintln!("Error: {}", err);
+    process::exit(1);
+  });
+  gloss::run(word);
 }

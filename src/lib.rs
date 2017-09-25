@@ -7,8 +7,12 @@ mod tests {
     }
 }
 
-pub fn run(mut args: env::Args) {
+pub fn getWord(mut args: env::Args) -> Result<String, &'static str> {
   args.next(); // Discard program name.
-  let word = args.next().expect("Missing argument.");
+
+  args.next().ok_or("Missing headword argument")
+}
+
+pub fn run(word: String) {
   println!("{}", word);
 }
