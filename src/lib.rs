@@ -24,10 +24,19 @@ fn read_file() -> Result<String, io::Error> {
   Ok(contents)
 }
 
+fn parse_keys<'a>(key_string: &'a String) -> Vec<Vec<&'a str>> {
+  let pairs = key_string.lines();
+
+  pairs.map(|line| {
+    line.split('=').collect()
+  }).collect()
+}
+
 pub fn run(word: String) -> Result<(), io::Error> {
   println!("{}", word);
   let key_string = read_file()?;
-  println!("{}", key_string);
+  let key_pairs = parse_keys(&key_string);
+  println!("{:?}", key_pairs);
 
   Ok(())
 }
