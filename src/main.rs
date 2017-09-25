@@ -1,5 +1,7 @@
 extern crate gloss;
 
+use std::env;
+
 fn main() {
-  gloss::run();
+  gloss::run(env::args());
 }

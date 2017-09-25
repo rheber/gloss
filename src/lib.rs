@@ -1,3 +1,5 @@
+use std::env;
+
 #[cfg(test)]
 mod tests {
     #[test]
@@ -5,6 +7,8 @@ mod tests {
     }
 }
 
-pub fn run() {
-  println!("Hello world!");
+pub fn run(mut args: env::Args) {
+  args.next(); // Discard program name.
+  let word = args.next().expect("Missing argument.");
+  println!("{}", word);
 }
