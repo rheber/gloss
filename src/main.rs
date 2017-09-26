@@ -9,7 +9,7 @@ fn main() {
     process::exit(1);
   });
 
-  gloss::run(word).unwrap_or_else(|err| {
+  gloss::run(&word[..]).unwrap_or_else(|err| {
     eprintln!("Error: {}", err);
     process::exit(1);
   });
