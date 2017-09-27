@@ -24,6 +24,12 @@ fn read_file() -> Result<String, io::Error> {
   Ok(contents)
 }
 
+fn parse_key_line(key_line: &str) -> Result<(&str, &str), &'static str> {
+  let idx = key_line.find('=').ok_or("Failed to parse keys file")?;
+
+  Ok(key_line.split_at(idx))
+}
+
 fn parse_keys<'a>(key_string: &'a str) -> Vec<Vec<&'a str>> {
   let pairs = key_string.lines();
 
