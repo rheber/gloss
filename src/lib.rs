@@ -1,4 +1,6 @@
+use std::collections::HashMap;
 use std::env;
+use std::error::Error;
 use std::fs::File;
 use std::io;
 use std::io::Read;
@@ -27,21 +29,28 @@ fn read_file() -> Result<String, io::Error> {
 fn parse_key_line(key_line: &str) -> Result<(&str, &str), &'static str> {
   let idx = key_line.find('=').ok_or("Failed to parse keys file")?;
 
-  Ok(key_line.split_at(idx))
+  Ok(key_line.split_at(idx+1))
 }
 
-fn parse_keys<'a>(key_string: &'a str) -> Vec<Vec<&'a str>> {
+fn parse_keys(key_string: &str) -> Result<HashMap<&str, &str>, &'static str> {
   let pairs = key_string.lines();
+  let results: Vec<Result<(&str, &str), _>> = pairs.map(parse_key_line).collect();
+  let mut keys = HashMap::new();
 
-  pairs.map(|line| {
-    line.split('=').collect()
-  }).collect()
+  for r in results {
+    match r {
+      Err(e) => return Err(e),
+      Ok((k, v)) => keys.insert(k, v),
+    };
+  };
+
+  Ok(keys)
 }
 
-pub fn run(word: &str) -> Result<(), io::Error> {
+pub fn run(word: &str) -> Result<(), Box<Error>> {
   println!("{}", word);
   let key_string = read_file()?;
-  let key_pairs = parse_keys(&key_string[..]);
+  let key_pairs = parse_keys(&key_string[..])?;
   println!("{:?}", key_pairs);
 
   Ok(())
