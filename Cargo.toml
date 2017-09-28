@@ -4,4 +4,5 @@ version = "0.1.0"
 authors = ["rheber <rheber@rediffmail.com>"]
 
 [dependencies]
+hyper = "0.11"
 reqwest = "0.7"
