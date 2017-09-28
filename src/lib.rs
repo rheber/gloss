@@ -1,5 +1,5 @@
-extern crate http;
-use http::Request;
+extern crate reqwest;
+use reqwest::{Client, Request, Url};
 
 use std::collections::HashMap;
 use std::env;
@@ -51,18 +51,17 @@ fn parse_keys(key_string: &str) -> Result<HashMap<&str, &str>, &'static str> {
 }
 
 fn construct_request(word: &str, keys: HashMap<&str, &str>) ->
-  Result<http::Request<()>, &'static str> {
+  Result<Request, Box<Error>> {
   let base_url = keys.get("base_url=").ok_or("Missing base_url key")?;
   let app_key = keys.get("app_key=").ok_or("Missing app_key key")?;
   let app_id = keys.get("app_id=").ok_or("Missing app_id key")?;
-  let uri = (String::from(*base_url) + word).parse::<http::Uri>().unwrap();
+  let url = (String::from(*base_url) + word).parse::<Url>().unwrap();
 
-  Ok(Request::builder().
-    uri(uri).
-    header("app_key", *app_key).
-    header("app_id", *app_id).
-    body(()).
-    unwrap())
+  let req = Client::new()?.
+    post(url)?.
+    form(&[("app_key", *app_key), ("app_id", *app_id)])?.
+    build();
+  Ok(req)
 }
 
 pub fn run(word: &str) -> Result<(), Box<Error>> {
