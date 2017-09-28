@@ -1,3 +1,6 @@
+extern crate http;
+use http::Request;
+
 use std::collections::HashMap;
 use std::env;
 use std::error::Error;
@@ -47,11 +50,27 @@ fn parse_keys(key_string: &str) -> Result<HashMap<&str, &str>, &'static str> {
   Ok(keys)
 }
 
+fn construct_request(word: &str, keys: HashMap<&str, &str>) ->
+  Result<http::Request<()>, &'static str> {
+  let base_url = keys.get("base_url=").ok_or("Missing base_url key")?;
+  let app_key = keys.get("app_key=").ok_or("Missing app_key key")?;
+  let app_id = keys.get("app_id=").ok_or("Missing app_id key")?;
+  let uri = (String::from(*base_url) + word).parse::<http::Uri>().unwrap();
+
+  Ok(Request::builder().
+    uri(uri).
+    header("app_key", *app_key).
+    header("app_id", *app_id).
+    body(()).
+    unwrap())
+}
+
 pub fn run(word: &str) -> Result<(), Box<Error>> {
   println!("{}", word);
   let key_string = read_file()?;
   let key_pairs = parse_keys(&key_string[..])?;
-  println!("{:?}", key_pairs);
+  let req = construct_request(word, key_pairs);
+  println!("{:?}", req);
 
   Ok(())
 }
