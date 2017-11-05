@@ -30,6 +30,11 @@ pub fn new_app<'a>() -> ArgMatches<'a> {
                 takes_value(true).
                 index(1).
                 help("word to define")).
+       arg(Arg::with_name("file").
+                short("f").
+                long("file").
+                takes_value(true).
+                help("file containing words to define, one word per line")).
        arg(Arg::with_name("lexemes").
                 short("l").
                 long("lexemes").
@@ -183,7 +188,7 @@ pub fn list_lexemes(non: bool) -> Result<(), Box<Error>> {
   Ok(())
 }
 
-pub fn define_one(word: &str) -> Result<(), Box<Error>> {
+pub fn define_one(word: &str, print: bool) -> Result<(), Box<Error>> {
   let glosses_result = potentially_create_glossfile();
   let glosses_unwrapped = glosses_result.unwrap();
   let mut glossmap = read_glosses(&glosses_unwrapped[..])?;
@@ -196,9 +201,21 @@ pub fn define_one(word: &str) -> Result<(), Box<Error>> {
     },
     None => get_new_gloss(word, &mut glossmap)?
   };
-  println!("{}", resp);
+  if print {
+    println!("{}", resp);
+  }
 }
   save_glosses(glossmap)?;
+
+  Ok(())
+}
+
+pub fn define_list(filename: &str) -> Result<(), Box<Error>> {
+  let wordfile = read_file(filename)?;
+  let wordlist = wordfile.lines();
+  for word in wordlist {
+    define_one(word, false)?;
+  }
 
   Ok(())
 }

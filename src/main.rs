@@ -13,10 +13,19 @@ fn main() {
 
   let maybe_word : Option<&str> = matches.value_of("headword");
   maybe_word.and_then::<Option<()>, _>(|word| {
-    gloss::define_one(&word[..]).unwrap_or_else(|err| {
+    gloss::define_one(&word[..], true).unwrap_or_else(|err| {
       err_exit(err);
     });
     // At this point we have successfully defined a word.
+    process::exit(0);
+  });
+
+  let maybe_file : Option<&str> = matches.value_of("file");
+  maybe_file.and_then::<Option<()>, _>(|filename| {
+    gloss::define_list(&filename[..]).unwrap_or_else(|err| {
+      err_exit(err);
+    });
+    // At this point we have successfully defined each word.
     process::exit(0);
   });
 
