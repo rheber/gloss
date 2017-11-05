@@ -1,3 +1,6 @@
+extern crate clap;
+use clap::{App, Arg, ArgMatches};
+
 extern crate reqwest;
 use reqwest::{Client, Response, Url};
 
@@ -7,7 +10,6 @@ use hyper::header::Headers;
 extern crate serde_json;
 
 use std::collections::HashMap;
-use std::env;
 use std::error::Error;
 use std::fmt;
 use std::fs::File;
@@ -19,6 +21,17 @@ mod tests {
     #[test]
     fn it_works() {
     }
+}
+
+pub fn new_app<'a>() -> ArgMatches<'a> {
+  App::new("gloss").
+       version("0.1").
+       arg(Arg::with_name("headword").
+                required(true).
+                takes_value(true).
+                index(1).
+                help("word to define")).
+       get_matches()
 }
 
 #[derive(Debug)]
@@ -36,13 +49,6 @@ impl Error for GlossError {
   fn description(&self) -> &str {
     &self.err_string[..]
   }
-}
-
-// Get command line argument.
-pub fn get_word(mut args: env::Args) -> Result<String, &'static str> {
-  args.next(); // Discard program name.
-
-  args.next().ok_or("Missing headword argument")
 }
 
 fn read_file(filename: &str) -> Result<String, io::Error> {
