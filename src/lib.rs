@@ -30,6 +30,14 @@ pub fn new_app<'a>() -> ArgMatches<'a> {
                 takes_value(true).
                 index(1).
                 help("word to define")).
+       arg(Arg::with_name("lexemes").
+                short("l").
+                long("lexemes").
+                help("list stored words which have definitions")).
+       arg(Arg::with_name("nonlexemes").
+                short("n").
+                long("nonlexemes").
+                help("list stored words which do not have definitions")).
        get_matches()
 }
 
@@ -145,11 +153,38 @@ fn get_new_gloss<'a, 'b>(word: &'b str,
   }
 }
 
-pub fn define_one(word: &str) -> Result<(), Box<Error>> {
-  let glosses_result: Result<String, &'static str> = read_file("glosses").or({
+fn potentially_create_glossfile() -> Result<String, Box<Error>> {
+  read_file("glosses").or({
     OpenOptions::new().append(true).create(true).open("glosses")?;
     Ok(String::new())
-  });
+  })
+}
+
+// If non is true then print undefined words.
+pub fn list_lexemes(non: bool) -> Result<(), Box<Error>> {
+  let glosses_result = potentially_create_glossfile();
+  let glosses_unwrapped = glosses_result.unwrap();
+  let glossmap = read_glosses(&glosses_unwrapped[..])?;
+
+  if non {
+    for (word, def) in glossmap {
+      if let None = def {
+        println!("{}", word);
+      }
+    }
+  } else {
+    for (word, def) in glossmap {
+      if let Some(_) = def {
+        println!("{}", word);
+      }
+    }
+  }
+
+  Ok(())
+}
+
+pub fn define_one(word: &str) -> Result<(), Box<Error>> {
+  let glosses_result = potentially_create_glossfile();
   let glosses_unwrapped = glosses_result.unwrap();
   let mut glossmap = read_glosses(&glosses_unwrapped[..])?;
   let cloned = glossmap.clone();
