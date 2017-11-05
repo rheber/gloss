@@ -4,10 +4,18 @@ use std::process;
 
 fn main() {
   let matches = gloss::new_app();
-  let word = matches.value_of("headword").unwrap();
+  let maybe_word : Option<&str> = matches.value_of("headword");
 
-  gloss::run(&word[..]).unwrap_or_else(|err| {
-    eprintln!("Error: {}", err);
-    process::exit(1);
+  maybe_word.and_then::<Option<()>, _>(|word| {
+    gloss::run(&word[..]).unwrap_or_else(|err| {
+      eprintln!("Error: {}", err);
+      process::exit(1);
+    });
+    // At this point we have successfully defined a word.
+    process::exit(0);
   });
+
+  // Did not define anything.
+  eprintln!("{}", matches.usage());
+  process::exit(1);
 }

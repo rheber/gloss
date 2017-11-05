@@ -27,7 +27,6 @@ pub fn new_app<'a>() -> ArgMatches<'a> {
   App::new("gloss").
        version("0.1").
        arg(Arg::with_name("headword").
-                required(true).
                 takes_value(true).
                 index(1).
                 help("word to define")).
