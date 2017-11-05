@@ -107,14 +107,14 @@ fn get_response(word: &str) -> Result<Response, Box<Error>> {
 }
 
 // Read map of glosses from serialised string.
-fn read_glosses(text: &str) -> Result<HashMap<&str, String>, Box<Error>> {
+fn read_glosses(text: &str) -> Result<HashMap<&str, Option<String>>, Box<Error>> {
   serde_json::from_str(text).or({
     Ok(HashMap::new())
   })
 }
 
 // Write map of glosses to file.
-fn save_glosses(glosses: HashMap<&str, String>) -> Result<(), Box<Error>> {
+fn save_glosses(glosses: HashMap<&str, Option<String>>) -> Result<(), Box<Error>> {
   let serial = serde_json::to_string(&glosses)?;
   let mut gloss_file = File::create("glosses")?;
   gloss_file.write_all(serial.as_bytes())?;
@@ -124,21 +124,28 @@ fn save_glosses(glosses: HashMap<&str, String>) -> Result<(), Box<Error>> {
 
 // Request gloss and insert into map.
 fn get_new_gloss<'a, 'b>(word: &'b str,
-  glosses: &'a mut HashMap<&'b str, String>) ->
-  Result<&'a String, Box<Error>> {
+  glosses: &'a mut HashMap<&'b str, Option<String>>) ->
+  Result<String, Box<Error>> {
   // Used even though we know a gloss exists to satisfy types.
   let impossible_error =
     Box::new(GlossError {err_string: String::from("Expected gloss in map.")});
 
   let mut resp = get_response(word)?;
-  let mut content = String::new();
-  resp.read_to_string(&mut content)?;
-  glosses.insert(word, content);
+  if resp.status().is_success() {
+    let mut content = String::new();
+    resp.read_to_string(&mut content)?;
+    let new_entry = Some(content);
+    glosses.insert(word, new_entry.clone());
 
-  glosses.get(word).ok_or(impossible_error)
+    new_entry.ok_or(impossible_error)
+  } else {
+    glosses.insert(word, None);
+
+    Ok(String::from("Not defined"))
+  }
 }
 
-pub fn run(word: &str) -> Result<(), Box<Error>> {
+pub fn define_one(word: &str) -> Result<(), Box<Error>> {
   let glosses_result: Result<String, &'static str> = read_file("glosses").or({
     OpenOptions::new().append(true).create(true).open("glosses")?;
     Ok(String::new())
@@ -147,8 +154,11 @@ pub fn run(word: &str) -> Result<(), Box<Error>> {
   let mut glossmap = read_glosses(&glosses_unwrapped[..])?;
   let cloned = glossmap.clone();
 {
-  let resp: &String = match cloned.get(word) {
-    Some(def) => def,
+  let resp: String = match cloned.get(word) {
+    Some(entry) => match entry {
+      &Some(ref def) => def.clone(),
+      &None => String::from("Not defined.")
+    },
     None => get_new_gloss(word, &mut glossmap)?
   };
   println!("{}", resp);

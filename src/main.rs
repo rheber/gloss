@@ -7,7 +7,7 @@ fn main() {
   let maybe_word : Option<&str> = matches.value_of("headword");
 
   maybe_word.and_then::<Option<()>, _>(|word| {
-    gloss::run(&word[..]).unwrap_or_else(|err| {
+    gloss::define_one(&word[..]).unwrap_or_else(|err| {
       eprintln!("Error: {}", err);
       process::exit(1);
     });
