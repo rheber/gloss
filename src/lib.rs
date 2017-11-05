@@ -12,7 +12,7 @@ extern crate serde_json;
 use std::collections::HashMap;
 use std::error::Error;
 use std::fmt;
-use std::fs::File;
+use std::fs::{File, OpenOptions};
 use std::io;
 use std::io::prelude::*;
 
@@ -122,16 +122,14 @@ fn save_glosses(glosses: HashMap<&str, String>) -> Result<(), Box<Error>> {
   Ok(())
 }
 
-// Retrieve gloss from map, requesting and inserting it if absent.
-fn get_gloss<'a, 'b>(word: &'b str, glosses: &'a mut HashMap<&'b str, String>) ->
+// Request gloss and insert into map.
+fn get_new_gloss<'a, 'b>(word: &'b str,
+  glosses: &'a mut HashMap<&'b str, String>) ->
   Result<&'a String, Box<Error>> {
   // Used even though we know a gloss exists to satisfy types.
   let impossible_error =
     Box::new(GlossError {err_string: String::from("Expected gloss in map.")});
 
-  if glosses.contains_key(word) {
-    return glosses.get(word).ok_or(impossible_error);
-  }
   let mut resp = get_response(word)?;
   let mut content = String::new();
   resp.read_to_string(&mut content)?;
@@ -142,13 +140,17 @@ fn get_gloss<'a, 'b>(word: &'b str, glosses: &'a mut HashMap<&'b str, String>) -
 
 pub fn run(word: &str) -> Result<(), Box<Error>> {
   let glosses_result: Result<String, &'static str> = read_file("glosses").or({
-    File::create("glosses")?;
+    OpenOptions::new().append(true).create(true).open("glosses")?;
     Ok(String::new())
   });
   let glosses_unwrapped = glosses_result.unwrap();
   let mut glossmap = read_glosses(&glosses_unwrapped[..])?;
+  let cloned = glossmap.clone();
 {
-  let resp = get_gloss(word, &mut glossmap)?;
+  let resp: &String = match cloned.get(word) {
+    Some(def) => def,
+    None => get_new_gloss(word, &mut glossmap)?
+  };
   println!("{}", resp);
 }
   save_glosses(glossmap)?;
