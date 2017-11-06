@@ -5,7 +5,7 @@ the Oxford Dictionary API.
 
 ## Preparation
 
-Go to https://od-api.oxforddictionaries.com and make an account.
+Go to https://developer.oxforddictionaries.com and make an account.
 Then create a file called "keys.txt" looking like this:
 
 ```
