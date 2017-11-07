@@ -13,7 +13,7 @@ fn main() {
 
   let maybe_word : Option<&str> = matches.value_of("headword");
   maybe_word.and_then::<Option<()>, _>(|word| {
-    gloss::define_one(&word[..], true).unwrap_or_else(|err| {
+    gloss::define_one(&word[..], &matches).unwrap_or_else(|err| {
       err_exit(err);
     });
     // At this point we have successfully defined a word.
