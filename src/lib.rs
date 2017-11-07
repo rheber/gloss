@@ -15,6 +15,7 @@ use std::fmt;
 use std::fs::{File, OpenOptions};
 use std::io;
 use std::io::prelude::*;
+use std::str;
 
 #[cfg(test)]
 mod tests {
@@ -120,14 +121,16 @@ fn get_response(word: &str) -> Result<Response, Box<Error>> {
 }
 
 // Read map of glosses from serialised string.
-fn read_glosses(text: &str) -> Result<HashMap<&str, Option<String>>, Box<Error>> {
+fn read_glosses(text: &str) ->
+  Result<HashMap<String, Option<String>>, Box<Error>> {
   serde_json::from_str(text).or({
     Ok(HashMap::new())
   })
 }
 
 // Write map of glosses to file.
-fn save_glosses(glosses: HashMap<&str, Option<String>>) -> Result<(), Box<Error>> {
+fn save_glosses(glosses: HashMap<String, Option<String>>) ->
+  Result<(), Box<Error>> {
   let serial = serde_json::to_string(&glosses)?;
   let mut gloss_file = File::create("glosses")?;
   gloss_file.write_all(serial.as_bytes())?;
@@ -136,14 +139,14 @@ fn save_glosses(glosses: HashMap<&str, Option<String>>) -> Result<(), Box<Error>
 }
 
 // Request gloss and insert into map.
-fn get_new_gloss<'a, 'b>(word: &'b str,
-  glosses: &'a mut HashMap<&'b str, Option<String>>) ->
+fn get_new_gloss<'a>(word: String,
+  glosses: &'a mut HashMap<String, Option<String>>) ->
   Result<String, Box<Error>> {
   // Used even though we know a gloss exists to satisfy types.
   let impossible_error =
     Box::new(GlossError {err_string: String::from("Expected gloss in map.")});
 
-  let mut resp = get_response(word)?;
+  let mut resp = get_response(&word[..])?;
   if resp.status().is_success() {
     let mut content = String::new();
     resp.read_to_string(&mut content)?;
@@ -199,7 +202,7 @@ pub fn define_one(word: &str, print: bool) -> Result<(), Box<Error>> {
       &Some(ref def) => def.clone(),
       &None => String::from("Not defined.")
     },
-    None => get_new_gloss(word, &mut glossmap)?
+    None => get_new_gloss(word.to_string(), &mut glossmap)?
   };
   if print {
     println!("{}", resp);
@@ -211,11 +214,22 @@ pub fn define_one(word: &str, print: bool) -> Result<(), Box<Error>> {
 }
 
 pub fn define_list(filename: &str) -> Result<(), Box<Error>> {
+  let glosses_result = potentially_create_glossfile();
+  let glosses_unwrapped = glosses_result.unwrap();
+  let mut glossmap = read_glosses(&glosses_unwrapped[..])?;
+  let cloned = glossmap.clone();
+
   let wordfile = read_file(filename)?;
-  let wordlist = wordfile.lines();
+  let wordlist : str::Lines = wordfile.lines();
+
   for word in wordlist {
-    define_one(word, false)?;
+    let def_opt = cloned.get(word);
+    match def_opt {
+      Some(_) => String::from("Already defined"),
+      None => get_new_gloss(word.to_string(), &mut glossmap)?
+    };
   }
+  save_glosses(glossmap)?;
 
   Ok(())
 }
