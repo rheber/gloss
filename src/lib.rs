@@ -215,6 +215,16 @@ pub fn remove_lexeme(word: &str) -> Result<(), Box<Error>> {
   Ok(())
 }
 
+fn list_from_json<'a>(j: &'a serde_json::Value, needle: String) ->
+  Result<&'a serde_json::Value, &'static str> {
+  if needle == "etymologies" {
+    return j.pointer("/results/0/lexicalEntries/0/entries/0/etymologies").
+      ok_or("No etymologies.");
+  }
+  j.pointer("/results/0/lexicalEntries/0/entries/0/senses/0/definitions").
+    ok_or("No definitions.")
+}
+
 pub fn define_one(word: &str, matches: &ArgMatches) -> Result<(), Box<Error>> {
   let glosses_result = potentially_create_glossfile();
   let glosses_unwrapped = glosses_result.unwrap();
@@ -229,18 +239,12 @@ pub fn define_one(word: &str, matches: &ArgMatches) -> Result<(), Box<Error>> {
     None => get_new_gloss(word.to_string(), &mut glossmap)?
   };
   if matches.is_present("definitions") {
-    let j : serde_json::Value =
-      serde_json::from_str(&resp[..])?;
-    let definitions =
-      j.pointer("/results/0/lexicalEntries/0/entries/0/senses/0/definitions").
-        ok_or("Couldn't print definitions.")?;
+    let j = serde_json::from_str(&resp[..])?;
+    let definitions = list_from_json(&j, String::from("definitions"))?;
     println!("{:?}", definitions);
   } else if matches.is_present("etym") {
-    let j : serde_json::Value =
-      serde_json::from_str(&resp[..])?;
-    let etym =
-      j.pointer("/results/0/lexicalEntries/0/entries/0/etymologies").
-        ok_or("Couldn't print etymologies.")?;
+    let j = serde_json::from_str(&resp[..])?;
+    let etym = list_from_json(&j, String::from("etymologies"))?;
     println!("{:?}", etym);
   } else {
     println!("{}", resp);
