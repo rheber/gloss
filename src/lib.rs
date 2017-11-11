@@ -9,7 +9,7 @@ use hyper::header::Headers;
 
 extern crate serde_json;
 
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::error::Error;
 use std::fmt;
 use std::fs::{File, OpenOptions};
@@ -86,10 +86,10 @@ fn parse_key_line(key_line: &str) -> Result<(&str, &str), &'static str> {
   Ok(key_line.split_at(idx+1))
 }
 
-fn parse_keys(key_string: &str) -> Result<HashMap<&str, &str>, &'static str> {
+fn parse_keys(key_string: &str) -> Result<BTreeMap<&str, &str>, &'static str> {
   let pairs = key_string.lines();
   let results: Vec<Result<(&str, &str), _>> = pairs.map(parse_key_line).collect();
-  let mut keys = HashMap::new();
+  let mut keys = BTreeMap::new();
 
   for r in results {
     match r {
@@ -130,14 +130,14 @@ fn get_response(word: &str) -> Result<Response, Box<Error>> {
 
 // Read map of glosses from serialised string.
 fn read_glosses(text: &str) ->
-  Result<HashMap<String, Option<String>>, Box<Error>> {
+  Result<BTreeMap<String, Option<String>>, Box<Error>> {
   serde_json::from_str(text).or({
-    Ok(HashMap::new())
+    Ok(BTreeMap::new())
   })
 }
 
 // Write map of glosses to file.
-fn save_glosses(glosses: HashMap<String, Option<String>>) ->
+fn save_glosses(glosses: BTreeMap<String, Option<String>>) ->
   Result<(), Box<Error>> {
   let serial = serde_json::to_string(&glosses)?;
   let mut gloss_file = File::create("glosses")?;
@@ -148,7 +148,7 @@ fn save_glosses(glosses: HashMap<String, Option<String>>) ->
 
 // Request gloss and insert into map.
 fn get_new_gloss<'a>(word: String,
-  glosses: &'a mut HashMap<String, Option<String>>) ->
+  glosses: &'a mut BTreeMap<String, Option<String>>) ->
   Result<String, Box<Error>> {
   // Used even though we know a gloss exists to satisfy types.
   let impossible_error =
