@@ -52,6 +52,11 @@ pub fn new_app<'a>() -> ArgMatches<'a> {
                 short("n").
                 long("nonlexemes").
                 help("list stored words which do not have definitions")).
+       arg(Arg::with_name("remove").
+                takes_value(true).
+                short("r").
+                long("remove").
+                help("erase any data stored for a word")).
        get_matches()
 }
 
@@ -195,6 +200,17 @@ pub fn list_lexemes(non: bool) -> Result<(), Box<Error>> {
       }
     }
   }
+
+  Ok(())
+}
+
+pub fn remove_lexeme(word: &str) -> Result<(), Box<Error>> {
+  let glosses_result = potentially_create_glossfile();
+  let glosses_unwrapped = glosses_result.unwrap();
+  let mut glossmap = read_glosses(&glosses_unwrapped[..])?;
+
+  glossmap.remove(word).ok_or("No data was stored for that word.")?;
+  save_glosses(glossmap)?;
 
   Ok(())
 }

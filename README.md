@@ -28,3 +28,5 @@ Run `cargo build`.
 
 * `cargo run -- -f wordfile.txt` will look up each word in wordfile.txt, which
 is assumed to have one word per line.
+
+* `cargo run -- -r foo` will erase any data stored for the word "foo".

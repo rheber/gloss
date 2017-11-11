@@ -42,6 +42,16 @@ fn main() {
     process::exit(0);
   }
 
+  let maybe_rem : Option<&str> = matches.value_of("remove");
+  maybe_rem.and_then::<Option<()>, _>(|word| {
+    gloss::remove_lexeme(&word[..]).unwrap_or_else(|err| {
+      err_exit(err);
+    });
+    // At this point we have successfully removed the word.
+    process::exit(0);
+  });
+
+
   // Did not perform any action.
   eprintln!("{}", matches.usage());
   process::exit(1);
