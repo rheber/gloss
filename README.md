@@ -20,7 +20,11 @@ Run `cargo build`.
 
 ## Usage
 
-* `cargo run foo` will store and print the definition of the word "foo".
+* `cargo run -- -d foo` will print definitions of the word "foo", storing
+them if necessary.
+
+* `cargo run -- -e foo` will print etymologies of the word "foo", storing
+them if necessary.
 
 * `cargo run -- -l` will list all stored words with definitions.
 

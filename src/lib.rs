@@ -16,6 +16,7 @@ use std::fs::{File, OpenOptions};
 use std::io;
 use std::io::prelude::*;
 use std::str;
+use std::vec::Vec;
 
 #[cfg(test)]
 mod tests {
@@ -216,13 +217,37 @@ pub fn remove_lexeme(word: &str) -> Result<(), Box<Error>> {
 }
 
 fn list_from_json<'a>(j: &'a serde_json::Value, needle: String) ->
-  Result<&'a serde_json::Value, &'static str> {
+  Result<String, &'static str> {
+  let lex_entries = j.pointer("/results/0/lexicalEntries").
+    ok_or("Not defined")?;
+  let empty_vec = Vec::new();
+  let entries = (*lex_entries).as_array().unwrap_or(&empty_vec);
+  let mut s = String::from("");
+
   if needle == "etymologies" {
-    return j.pointer("/results/0/lexicalEntries/0/entries/0/etymologies").
-      ok_or("No etymologies.");
+    for entry in entries {
+      let etym_maybe = entry.pointer("/entries/0/etymologies");
+      if let Some(arr) = etym_maybe {
+        for etym in (*arr).as_array().unwrap_or(&empty_vec) {
+          let etym_formed = format!("* {}\n", etym.as_str().unwrap_or(""));
+          s.push_str(&etym_formed[..]);
+        }
+      }
+    }
+    return Ok(s);
   }
-  j.pointer("/results/0/lexicalEntries/0/entries/0/senses/0/definitions").
-    ok_or("No definitions.")
+
+  for entry in entries {
+    let def_maybe = entry.pointer("/entries/0/senses/0/definitions");
+    if let Some(defs) = def_maybe {
+      for def in (*defs).as_array().unwrap_or(&empty_vec) {
+        let def_formed = format!("* {}\n", def.as_str().unwrap_or(""));
+        s.push_str(&def_formed[..]);
+      }
+    }
+  }
+
+  Ok(s)
 }
 
 pub fn define_one(word: &str, matches: &ArgMatches) -> Result<(), Box<Error>> {
@@ -239,13 +264,13 @@ pub fn define_one(word: &str, matches: &ArgMatches) -> Result<(), Box<Error>> {
     None => get_new_gloss(word.to_string(), &mut glossmap)?
   };
   if matches.is_present("definitions") {
-    let j = serde_json::from_str(&resp[..])?;
+    let j = serde_json::from_str(&resp[..]).or(Err("Not defined."))?;
     let definitions = list_from_json(&j, String::from("definitions"))?;
-    println!("{:?}", definitions);
+    println!("{}", definitions);
   } else if matches.is_present("etym") {
-    let j = serde_json::from_str(&resp[..])?;
+    let j = serde_json::from_str(&resp[..]).or(Err("Not defined."))?;
     let etym = list_from_json(&j, String::from("etymologies"))?;
-    println!("{:?}", etym);
+    println!("{}", etym);
   } else {
     println!("{}", resp);
   }
