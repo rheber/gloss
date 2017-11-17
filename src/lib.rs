@@ -32,6 +32,11 @@ pub fn new_app<'a>() -> ArgMatches<'a> {
                 takes_value(true).
                 index(1).
                 help("word to define")).
+       arg(Arg::with_name("columns").
+                short("c").
+                long("columns").
+                default_value("1").
+                help("amount of columns when listing lexemes")).
        arg(Arg::with_name("definitions").
                 short("d").
                 long("definitions").
@@ -183,21 +188,35 @@ fn potentially_create_glossfile() -> Result<String, Box<Error>> {
 }
 
 // If non is true then print undefined words.
-pub fn list_lexemes(non: bool) -> Result<(), Box<Error>> {
+pub fn list_lexemes(non: bool, amt_columns: Option<&str>) ->
+  Result<(), Box<Error>> {
   let glosses_result = potentially_create_glossfile();
   let glosses_unwrapped = glosses_result.unwrap();
   let glossmap = read_glosses(&glosses_unwrapped[..])?;
 
+  let amt_str = amt_columns.unwrap_or("1");
+  let amt_int : usize = amt_str.trim().parse()?;
+  let columns = if amt_int > 1 {amt_int} else {1};
+  let mut i = 0;
+
   if non {
     for (word, def) in glossmap {
       if let None = def {
-        println!("{}", word);
+        print!("{:15}\t", word);
+        i = i + 1;
+        if i % columns == 0 {
+          println!();
+        }
       }
     }
   } else {
     for (word, def) in glossmap {
       if let Some(_) = def {
-        println!("{}", word);
+        print!("{:15}\t", word);
+        i = i + 1;
+        if i % columns == 0 {
+          println!();
+        }
       }
     }
   }

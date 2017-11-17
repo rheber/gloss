@@ -29,14 +29,15 @@ fn main() {
     process::exit(0);
   });
 
+  let amt_columns : Option<&str> = matches.value_of("columns");
   if matches.is_present("lexemes") {
-    gloss::list_lexemes(false).unwrap_or_else(|err| {
+    gloss::list_lexemes(false, amt_columns).unwrap_or_else(|err| {
       err_exit(err);
     });
     process::exit(0);
   }
   if matches.is_present("nonlexemes") {
-    gloss::list_lexemes(true).unwrap_or_else(|err| {
+    gloss::list_lexemes(true, amt_columns).unwrap_or_else(|err| {
       err_exit(err);
     });
     process::exit(0);

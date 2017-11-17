@@ -28,6 +28,8 @@ them if necessary.
 
 * `cargo run -- -l` will list all stored words with definitions.
 
+* `cargo run -- -l -c 3` will list all stored, defined words in 3 columns.
+
 * `cargo run -- -n` will list all stored words without definitions.
 
 * `cargo run -- -f wordfile.txt` will look up each word in wordfile.txt, which
